@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const Product = require("../models/Product"); 
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 require("dotenv").config({ path: "variables.env" });
@@ -14,6 +15,24 @@ const resolvers = {
     getUser: async (_, { token }) => {
        const userId = await jwt.verify(token, process.env.SECRET_WORD);
        return userId; 
+    },
+    getProducts: async () => {
+      try {
+        const products = await Product.find({});
+        return products;
+      } catch (err) {
+        console.log(err);
+      }
+    },
+    getProduct: async (_, { id }) => {
+       //check if product exists
+       const product = await Product.findById(id); 
+
+       if(!product) {
+         throw new Error("Product does not exist")
+       }
+
+       return product;
     }
   },
   Mutation: {
@@ -60,7 +79,47 @@ const resolvers = {
         token: createToken(existingUser, process.env.SECRET_WORD, "24h")
       }
 
-    }
+    },
+    newProduct: async (_, { input }) => {
+      try {
+        const newProduct = new Product(input);
+
+        //store in db
+        const result = newProduct.save();
+
+        return result;
+        
+      } catch (err) {
+        console.log(err);
+      }
+    },
+    updateProduct: async (_, { id, input }) => {
+      //check if products exits
+      let product = await Product.findById(id); 
+
+       if(!product) {
+         throw new Error("Product does not exist");
+       }
+
+       //otherwise save in DB
+       product = await Product.findOneAndUpdate({ _id: id }, input, { new: true }); // use { new: true } to return the very last update of the product
+
+       return product;
+    },
+    deleteProduct: async (_, { id }) => {
+      //check if product exists
+      let product = await Product.findById(id); 
+
+       if(!product) {
+         throw new Error("Product does not exist");
+       }
+
+       //delete
+       await Product.findOneAndDelete({ _id: id});
+ 
+       return "Product deleted" // because we have Mutation: String.
+
+    },
   }
 };
 
