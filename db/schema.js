@@ -2,7 +2,7 @@ const { gql } = require("apollo-server");
 
 // Schema
 const typeDefs = gql`
-
+  #type -> what we can get from db
   type User {
     id: ID #not declared in the Schema but mongo will assign it.
     name: String
@@ -24,6 +24,17 @@ const typeDefs = gql`
     createdAt: String
   }
 
+  type Client {
+    id: ID
+    name: String
+    lastName: String
+    company: String
+    email: String
+    phone: String
+    seller: ID
+  }
+
+  #input -> what we pass to the Mutations
   input UserInput {
     name: String!
     lastName: String!
@@ -42,12 +53,25 @@ const typeDefs = gql`
      price: Float! 
   }
 
+  input ClientInput {
+    name: String!
+    lastName: String!
+    company: String!
+    email: String!
+    phone: String
+    # seller will be passed in the context(the actual logged in User)
+  }
+
   # Query is only for GET
   type Query {
     getUser(token: String!): User
 
     getProducts: [Product]
     getProduct(id: ID!): Product
+
+    getClients: [Client]
+    getUserClients: [Client]
+    getClient(id: ID!): Client
   }
 
   type Mutation { # edicion, creacion y eliminacion
@@ -57,6 +81,11 @@ const typeDefs = gql`
     newProduct(input: ProductInput): Product
     updateProduct(id: ID!, input: ProductInput): Product
     deleteProduct(id: ID!): String
+
+    newClient(input: ClientInput): Client
+    updateClient(id: ID!, input: ClientInput): Client
+    deleteClient(id: ID!): String
+
   }
 
 `;

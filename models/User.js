@@ -3,6 +3,9 @@ const mongoose = require("mongoose");
 // will interact with the DB
 // must follow what is defined in the Schema
 // the resolver will work with the model
+
+//users will create/update their clients
+
 const UserSchema = mongoose.Schema({
   name: {
     type: String,
