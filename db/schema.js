@@ -34,6 +34,21 @@ const typeDefs = gql`
     seller: ID
   }
 
+  type Order {
+    id: ID
+    order: [OrderGroup]
+    total: Float
+    client: ID
+    seller: ID
+    createdAt: String
+    status: OrderStatus
+  }
+
+  type OrderGroup {
+    id: ID
+    amount: Int
+  }
+
   #input -> what we pass to the Mutations
   input UserInput {
     name: String!
@@ -62,6 +77,25 @@ const typeDefs = gql`
     # seller will be passed in the context(the actual logged in User)
   }
 
+  input ProductOrderInput {
+    id: ID
+    amount: Int
+  }
+
+  enum OrderStatus {
+    pending
+    completed
+    cancelled
+  }
+
+  input OrderInput {
+    order: [ProductOrderInput]
+    total: Float
+    client: ID
+    # seller will be assigned with the user that is currently authenticated (ctx)
+    status: OrderStatus
+  }
+
   # Query is only for GET
   type Query {
     getUser(token: String!): User
@@ -72,6 +106,11 @@ const typeDefs = gql`
     getClients: [Client]
     getUserClients: [Client]
     getClient(id: ID!): Client
+
+    getOrders: [Order]
+    getSellerOrders: [Order]
+    getOrder(id: ID!): Order
+    getOrdersByStatus(status: OrderStatus): [Order]
   }
 
   type Mutation { # edicion, creacion y eliminacion
@@ -86,6 +125,9 @@ const typeDefs = gql`
     updateClient(id: ID!, input: ClientInput): Client
     deleteClient(id: ID!): String
 
+    newOrder(input: OrderInput): Order
+    updateOrder(id: ID!, input: OrderInput): Order
+    deleteOrder(id: ID!): String
   }
 
 `;

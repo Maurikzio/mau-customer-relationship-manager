@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const Product = require("../models/Product"); 
 const Client = require("../models/Client");
+const Order = require("../models/Order");
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 require("dotenv").config({ path: "variables.env" });
@@ -65,6 +66,41 @@ const resolvers = {
 
       return client;
 
+    },
+    getOrders: async () => {
+      try {
+        const orders = await Order.find({});
+        return orders;
+      } catch (err) {
+        console.log(err); 
+      }
+    },
+    getSellerOrders: async (_, {}, ctx) => {
+      try {
+        const orders = await Order.find({ seller: ctx.user.id });
+        return orders;
+      } catch (err) {
+        console.log(err); 
+      }
+    },
+    getOrder: async (_, { id }, ctx) => {
+      //check if the order exists
+      const order = await Order.findById(id);
+      if(!order) {
+        throw new Error("Order was not found");
+      }
+
+      //only the one that created the order can see it
+      if(order.seller.toString() !== ctx.user.id) {
+        throw new Error("Not able to perform this action");
+      }
+
+      //return the order
+      return order; 
+    },
+    getOrdersByStatus: async (_, { status }, ctx) => {
+      const orders = await Order.find({ seller: ctx.user.id, status });
+      return orders;
     }
   },
   Mutation: {
@@ -189,7 +225,7 @@ const resolvers = {
       client = await Client.findOneAndUpdate({ _id: id }, input, { new: true });
       return client;
     },
-    deleteClient: async (_, { id}, ctx) => {
+    deleteClient: async (_, { id }, ctx) => {
       let client = await Client.findById(id);
 
       if (!client) {
@@ -204,6 +240,106 @@ const resolvers = {
 
       return "Client deleted"
 
+    },
+    newOrder: async (_, { input }, ctx) => {
+      const { client } = input;
+
+      //check if clients exists
+      let clientExists = await Client.findById(client);
+
+      if (!clientExists) {
+        throw new Error("Client does not exist");
+      }
+
+      //check if client is associated witht the Seller(User)
+      if(clientExists.seller.toString() !== ctx.user.id) {
+        throw new Error("You are not allowed to perfom this action");
+      }
+
+      //check the product stock
+      // input.order.forEach(async p => { :(
+      for await (const p of input.order){
+        const { id } = p;
+        const product = await Product.findById(id);
+        
+        if(p.amount > product.stock) {
+          throw new Error(`We dont have that much ${product.name} on stock`);
+        } else {
+          // take the order amount off the stock
+          product.stock = product.stock - p.amount
+
+          await product.save(); 
+        }
+      }
+
+      //create a new order
+      const newOrder = new Order(input);
+
+      //asign seller to product
+      newOrder.seller = ctx.user.id;
+
+      //save into db
+      const result = await newOrder.save();
+      
+      return result;
+
+    },
+    updateOrder: async (_, { id, input }, ctx) => {
+
+      const { client } = input;
+
+      //check if order exists
+      const _order = await Order.findById(id);
+      if(!_order) {
+        throw new Error("Order was not found");
+      } 
+
+      //check if client exists
+      const _client = await Client.findById(client);
+      if(!_client) {
+        throw new Error("Client does not exist");
+      }
+
+      //check if order and cliente belongs to seller
+      if(_client.seller.toString() !== ctx.user.id) {
+        throw new Error("You cannot perfomr this action")
+      }
+
+      //check the stock
+      if(input.order) {
+        for await (const p of input.order){
+          const { id } = p;
+          const product = await Product.findById(id);
+          
+          if(p.amount > product.stock) {
+            throw new Error(`We dont have that much ${product.name} on stock`);
+          } else {
+            // take the order amount off the stock
+            product.stock = product.stock - p.amount
+  
+            await product.save(); 
+          }
+        }
+      }
+
+      //save order
+      const result = await Order.findOneAndUpdate({ _id: id}, input, { new: true });
+      return result;
+    },
+    deleteOrder: async (_, { id }, ctx) => {
+      //check if order exists or not
+      const order = await Order.findById(id);
+      if(!order) {
+        throw new Error("Order does not exist");
+      }
+      //check if is the seller the one that is trying to delete the order.
+      if(order.seller.toString() !== ctx.user.id) {
+        throw new Error("Your are not allowed to perform this action");
+      }
+
+      //delete from db
+      await Order.findOneAndDelete({ _id: id })
+      return "Order deleted"
     }
   }
 };
