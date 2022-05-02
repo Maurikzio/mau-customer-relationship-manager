@@ -101,6 +101,28 @@ const resolvers = {
     getOrdersByStatus: async (_, { status }, ctx) => {
       const orders = await Order.find({ seller: ctx.user.id, status });
       return orders;
+    },
+
+    bestClients: async () => {
+      const _bestClients = await Order.aggregate([
+        { $match: { status: "completed" } },
+        { $group: {
+          _id: "$client",
+          total: { $sum: "$total"}
+        }},
+        {
+          $lookup: {
+            from: "clients",
+            localField: "_id",
+            foreignField: "_id",
+            as: "client"
+          }
+        },
+        {
+          $sort: { total: -1 }
+        }
+      ]);
+      return _bestClients;
     }
   },
   Mutation: {

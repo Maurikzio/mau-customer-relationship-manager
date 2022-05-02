@@ -49,6 +49,11 @@ const typeDefs = gql`
     amount: Int
   }
 
+  type TopClient {
+    total: Float
+    client: [Client]
+  }
+
   #input -> what we pass to the Mutations
   input UserInput {
     name: String!
@@ -111,6 +116,8 @@ const typeDefs = gql`
     getSellerOrders: [Order]
     getOrder(id: ID!): Order
     getOrdersByStatus(status: OrderStatus): [Order]
+
+    bestClients: [TopClient]
   }
 
   type Mutation { # edicion, creacion y eliminacion
