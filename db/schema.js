@@ -123,8 +123,9 @@ const typeDefs = gql`
     getOrdersByStatus(status: OrderStatus): [Order]
 
     bestClients: [TopClient]
-
     bestSellers: [TopSeller]
+    searchProducts(text: String!): [Product]
+
   }
 
   type Mutation { # edicion, creacion y eliminacion

@@ -19,7 +19,10 @@ const ProductSchema = mongoose.Schema({
     type: Date,
     default: Date.now(),
   }
-})
+});
+
+ProductSchema.index({ name: "text" })
+
 
 module.exports = mongoose.model("Product", ProductSchema);
  
