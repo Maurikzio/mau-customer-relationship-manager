@@ -119,10 +119,38 @@ const resolvers = {
           }
         },
         {
+          $limit: 10
+        },
+        {
           $sort: { total: -1 }
         }
       ]);
       return _bestClients;
+    },
+    bestSellers: async () => {
+      const _bestSellers = await Order.aggregate([
+        { $match: { status: "completed" }},
+        { $group: {
+          _id: "$seller",
+          total: { $sum: "$total" }
+        }},
+        {
+          $lookup: {
+            from: "users",
+            localField: "_id",
+            foreignField: "_id",
+            as: "seller"
+          }
+        },
+        {
+          $limit: 5
+        },
+        {
+          $sort: { total: -1 }
+        }
+      ]);
+
+      return _bestSellers;
     }
   },
   Mutation: {
